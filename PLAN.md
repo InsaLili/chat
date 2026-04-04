@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     system: systemPrompt || 'You are a helpful assistant.',
     messages,
   });
-  return result.toDataStreamResponse(); // MUST be toDataStreamResponse() for useChat
+  return result.toTextStreamResponse(); // ai v6: use toTextStreamResponse()
 }
 ```
 
