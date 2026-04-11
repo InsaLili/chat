@@ -1,14 +1,17 @@
 import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
+import { convertToModelMessages, streamText, UIMessage } from 'ai';
 
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
-  const { messages, systemPrompt } = await req.json();
+  const { messages, systemPrompt }: { messages: UIMessage[]; systemPrompt?: string } =
+    await req.json();
+
   const result = streamText({
     model: openai('gpt-4o-mini'),
     system: systemPrompt || 'You are a helpful assistant.',
-    messages,
+    messages: await convertToModelMessages(messages),
   });
-  return result.toTextStreamResponse();
+
+  return result.toUIMessageStreamResponse();
 }
