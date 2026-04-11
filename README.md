@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Web Chat UI
 
-## Getting Started
+A streaming chat interface built with Next.js, Tailwind CSS, and the Vercel AI SDK.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Task 1 — Chat page layout + streaming hook
+
+Wired up the frontend to the OpenAI API using the Vercel AI SDK v6 streaming pipeline.
+
+### API route (`app/api/chat/route.ts`)
+
+```ts
+const { messages }: { messages: UIMessage[] } = await req.json();
+
+const result = streamText({
+  model: openai('gpt-4o-mini'),
+  system: systemPrompt || 'You are a helpful assistant.',
+  messages: await convertToModelMessages(messages),
+});
+
+return result.toUIMessageStreamResponse();
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Key concepts:**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **UI messages vs Model messages** — The frontend uses `UIMessage` (has `.parts`, `.id`, metadata). The model API expects a flat `ModelMessage` format (`{ role, content }`). `convertToModelMessages` bridges the two. Managing this gap between app format and model format is a recurring pattern in AI engineering.
+- **`toUIMessageStreamResponse()`** — Returns a structured stream with text deltas, step boundaries, finish reason, and token usage. This is what powers the `useChat` hook's state on the client. Different from a plain text stream — it carries metadata the UI needs.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### `useChat` hook (`app/components/Chat.tsx`)
 
-## Learn More
+```ts
+const { messages, sendMessage, status, stop, error, regenerate } = useChat({
+  transport: new DefaultChatTransport({ api: '/api/chat' }),
+});
+```
 
-To learn more about Next.js, take a look at the following resources:
+One hook manages the entire chat lifecycle:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Property     | What it does                                                                              |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `messages`   | Full conversation history, updated token-by-token as the stream arrives                   |
+| `status`     | `'ready'` / `'submitted'` / `'streaming'` / `'error'` — maps to the LLM request lifecycle |
+| `stop`       | Aborts the stream mid-generation (saves tokens + improves UX)                             |
+| `regenerate` | Retries the last assistant message                                                        |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Why this matters for AI engineering:** LLMs are stateless — the full conversation history is re-sent on every request. The `useChat` hook handles this automatically. Understanding that statefulness lives in the client, not the model, is foundational.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Task 2 — Component structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Refactored into a clean component tree with the `'use client'` boundary pushed as far down as possible.
+
+```
+app/
+├── page.tsx                  ← Server Component, renders <Chat />
+├── api/chat/route.ts         ← Streaming API route
+└── components/
+    ├── Chat.tsx              ← 'use client' — owns useChat state, passes props down
+    ├── MessageList.tsx       ← Pure display: maps messages, thinking indicator, error state
+    ├── MessageBubble.tsx     ← Single message: role badge + bubble styling
+    └── ChatInput.tsx         ← 'use client' — owns textarea state, auto-grow, submit logic
+```
+
+**Key decisions:**
+
+- `page.tsx` stays a server component — no JavaScript shipped for the outer shell
+- `'use client'` boundary is at `Chat.tsx`, not at the page level
+- `MessageList` and `MessageBubble` are pure display components with no hooks — stateless and easy to extend
+- `ChatInput` has its own `'use client'` since it owns local input state independently of the chat
+
+---
+
+## Running locally
+
+```bash
+# Add your OpenAI key
+echo "OPENAI_API_KEY=sk-..." > .env.local
+
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
