@@ -60,6 +60,7 @@ app/
     ├── Chat.tsx              ← 'use client' — owns useChat state, passes props down
     ├── MessageList.tsx       ← Pure display: maps messages, thinking indicator, error state
     ├── MessageBubble.tsx     ← Single message: role badge + bubble styling
+    ├── MarkdownContent.tsx   ← Renders assistant message text as Markdown
     └── ChatInput.tsx         ← 'use client' — owns textarea state, auto-grow, submit logic
 ```
 
@@ -69,6 +70,27 @@ app/
 - `'use client'` boundary is at `Chat.tsx`, not at the page level
 - `MessageList` and `MessageBubble` are pure display components with no hooks — stateless and easy to extend
 - `ChatInput` has its own `'use client'` since it owns local input state independently of the chat
+
+---
+
+## Task 3 — Markdown rendering for assistant messages
+
+OpenAI returns plain text that uses Markdown syntax (e.g. `**bold**`, fenced code blocks, tables). Previously these rendered as raw characters. Now assistant messages are parsed and displayed as formatted Markdown.
+
+### How it works
+
+- OpenAI sends a plain text string — no styling metadata, just Markdown conventions baked into the text
+- `MessageBubble` routes assistant text parts through `MarkdownContent` and renders user messages as plain `whitespace-pre-wrap` text (users don't write Markdown)
+- `MarkdownContent` uses `react-markdown` with `remarkGfm` to parse the string into HTML
+
+### Library roles
+
+| Library | Role |
+|---|---|
+| `react-markdown` | Parses CommonMark syntax and renders React elements |
+| `remarkGfm` | Extends CommonMark with GFM: tables, strikethrough, task lists, autolinks |
+| `@tailwindcss/typography` | `prose` base styles for headings, paragraphs, lists |
+| `components` prop | Overrides `<code>` and `<pre>` with custom Tailwind styling for inline code and code blocks |
 
 ---
 
