@@ -1,4 +1,5 @@
 import type { UIMessage } from 'ai';
+import MarkdownContent from './MarkdownContent';
 
 type Props = {
   message: UIMessage;
@@ -20,15 +21,20 @@ export default function MessageBubble({ message }: Props) {
       </div>
 
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
           isUser
-            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-tr-sm'
+            ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 rounded-tr-sm whitespace-pre-wrap'
             : 'bg-white text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 rounded-tl-sm shadow-sm'
         }`}
       >
-        {message.parts.map((part, i) =>
-          part.type === 'text' ? <span key={i}>{part.text}</span> : null,
-        )}
+        {message.parts.map((part, i) => {
+          if (part.type !== 'text') return null;
+          return isUser ? (
+            <span key={i}>{part.text}</span>
+          ) : (
+            <MarkdownContent key={i} content={part.text} />
+          );
+        })}
       </div>
     </div>
   );
