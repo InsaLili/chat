@@ -71,6 +71,12 @@ app/
 - `MessageList` and `MessageBubble` are pure display components with no hooks — stateless and easy to extend
 - `ChatInput` has its own `'use client'` since it owns local input state independently of the chat
 
+### Task 2.1 — ChatInput polish
+
+- Auto-grow moved from an `onInput` DOM event handler to a `useEffect` watching `input` state — height stays in sync with React's state, including auto-reset on send
+- Send/Stop text labels replaced with SVG icon buttons; textarea is no longer disabled during streaming so the user can type ahead
+- Minor UX tweaks: taller max height, smooth height transition
+
 ---
 
 ## Task 3 — Markdown rendering for assistant messages
