@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
 import type { UIMessage } from 'ai';
 import MessageBubble from './MessageBubble';
 
@@ -9,8 +12,21 @@ type Props = {
 };
 
 export default function MessageList({ messages, isSubmitted, error, onRetry }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll only when user is near the bottom (within 100px)
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    if (isNearBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isSubmitted]);
+
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
         {messages.length === 0 && (
           <p className="text-center text-zinc-400 dark:text-zinc-600 mt-24 text-sm">
@@ -35,6 +51,8 @@ export default function MessageList({ messages, isSubmitted, error, onRetry }: P
             </button>
           </div>
         )}
+
+        <div ref={bottomRef} />
       </div>
     </div>
   );

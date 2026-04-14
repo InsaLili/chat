@@ -100,6 +100,32 @@ OpenAI returns plain text that uses Markdown syntax (e.g. `**bold**`, fenced cod
 
 ---
 
+## Task 4 — Conversations: sidebar + localStorage persistence
+
+Introduced multi-conversation support. Users can create, switch between, and delete conversations, all persisted to `localStorage`.
+
+### Component tree changes
+
+```
+app/
+├── page.tsx                  ← now renders <ChatApp /> instead of <Chat />
+└── components/
+    ├── ChatApp.tsx           ← 'use client' — owns all conversation state, persists to localStorage
+    ├── Sidebar.tsx           ← conversation list, new/delete actions, responsive (mobile overlay)
+    ├── Chat.tsx              ← now accepts initialMessages + onMessagesChange props
+    └── MessageList.tsx       ← added auto-scroll (smart: only scrolls if user is near bottom)
+```
+
+### Key concepts
+
+- **`ChatApp` as the state owner** — all conversation data lives here. `Chat` is now a controlled component that receives its messages as a prop and calls back when they change.
+- **`localStorage` persistence** — conversations are loaded on mount and saved whenever state changes. A `hydrated` flag prevents a SSR/client mismatch on first render.
+- **Auto-title** — a conversation titled "New chat" is automatically renamed to the first 40 characters of the user's first message (`deriveTitle` in `app/lib/conversations.ts`).
+- **Callback timing** — `Chat` persists on two events: when the user sends a message (via `useEffect` watching message length) and when the assistant finishes responding (via `onFinish` + `queueMicrotask`). Refs are used so the callbacks always capture the latest state without becoming stale closures.
+- **`key={activeConversation.id}`** — switching conversations unmounts and remounts `<Chat>` entirely, giving each conversation a fresh `useChat` instance seeded with its saved messages.
+
+---
+
 ## Running locally
 
 ```bash
