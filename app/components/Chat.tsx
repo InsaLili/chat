@@ -9,12 +9,16 @@ import ChatInput from './ChatInput';
 
 type Props = {
   initialMessages?: UIMessage[];
+  systemPrompt?: string;
   onMessagesChange?: (messages: UIMessage[]) => void;
 };
 
-export default function Chat({ initialMessages, onMessagesChange }: Props) {
+export default function Chat({ initialMessages, systemPrompt, onMessagesChange }: Props) {
   const { messages, sendMessage, status, stop, error, regenerate } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/chat' }),
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      body: systemPrompt ? { systemPrompt } : undefined,
+    }),
     messages: initialMessages,
     onFinish: () => {
       // Persist after assistant finishes responding

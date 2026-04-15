@@ -4,6 +4,7 @@ export type Conversation = {
   id: string;
   title: string;
   messages: UIMessage[];
+  systemPrompt: string;
   createdAt: number;
 };
 
@@ -32,6 +33,7 @@ export function createConversation(): Conversation {
     id: generateId(),
     title: 'New chat',
     messages: [],
+    systemPrompt: '',
     createdAt: Date.now(),
   };
 }

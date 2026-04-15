@@ -10,6 +10,7 @@ import {
   saveConversations,
 } from '../lib/conversations';
 import Sidebar from './Sidebar';
+import SystemPromptPanel from './SystemPromptPanel';
 import Chat from './Chat';
 
 export default function ChatApp() {
@@ -83,6 +84,12 @@ export default function ChatApp() {
     [activeId],
   );
 
+  function handleSystemPromptChange(prompt: string) {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === activeId ? { ...c, systemPrompt: prompt } : c)),
+    );
+  }
+
   // Don't render until hydrated to avoid SSR/client mismatch
   if (!hydrated) return null;
 
@@ -113,11 +120,18 @@ export default function ChatApp() {
         </div>
 
         {activeConversation && (
-          <Chat
-            key={activeConversation.id}
-            initialMessages={activeConversation.messages}
-            onMessagesChange={handleMessagesChange}
-          />
+          <>
+            <SystemPromptPanel
+              value={activeConversation.systemPrompt}
+              onChange={handleSystemPromptChange}
+            />
+            <Chat
+              key={activeConversation.id}
+              initialMessages={activeConversation.messages}
+              systemPrompt={activeConversation.systemPrompt}
+              onMessagesChange={handleMessagesChange}
+            />
+          </>
         )}
       </div>
     </div>
